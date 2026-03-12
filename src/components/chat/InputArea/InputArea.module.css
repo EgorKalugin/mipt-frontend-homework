@@ -1,0 +1,76 @@
+.wrapper {
+  padding: 16px 24px 24px;
+  background-color: var(--color-bg);
+  border-top: 1px solid var(--color-border);
+}
+
+.form {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.inputWrapper {
+  flex: 1;
+  position: relative;
+}
+
+.textarea {
+  width: 100%;
+  min-height: var(--input-height);
+  max-height: 200px;
+  padding: 14px 16px;
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-lg);
+  color: var(--color-text);
+  resize: none;
+  outline: none;
+  line-height: 1.5;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.textarea::placeholder {
+  color: var(--color-text-secondary);
+}
+
+.textarea:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1);
+}
+
+.textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.sendButton {
+  flex-shrink: 0;
+  width: 48px;
+  height: var(--input-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-primary);
+  color: white;
+  border-radius: var(--border-radius-lg);
+  transition: background-color var(--transition-fast), opacity var(--transition-fast);
+}
+
+.sendButton:hover:not(:disabled) {
+  background-color: var(--color-primary-hover);
+}
+
+.sendButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.hint {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  text-align: center;
+}
