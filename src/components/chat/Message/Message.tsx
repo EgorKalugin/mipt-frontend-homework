@@ -7,12 +7,13 @@ import styles from './Message.module.css';
 
 interface MessageProps {
   message: MessageType;
+  variant?: 'user' | 'assistant';
 }
 
-export function Message({ message }: MessageProps) {
+export function Message({ message, variant }: MessageProps) {
   const [copied, setCopied] = useState(false);
 
-  const isUser = message.role === 'user';
+  const isUser = (variant ?? message.role) === 'user';
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(message.content);

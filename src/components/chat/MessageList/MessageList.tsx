@@ -20,9 +20,9 @@ export function MessageList({ messages, isTyping = false }: MessageListProps) {
     <div className={styles.list}>
       <div className={styles.messages}>
         {messages.map((message) => (
-          <Message key={message.id} message={message} />
+          <Message key={message.id} message={message} variant={message.role} />
         ))}
-        {isTyping && <TypingIndicator />}
+        <TypingIndicator isVisible={isTyping} />
       </div>
       <div ref={scrollRef} className={styles.scrollAnchor} />
     </div>

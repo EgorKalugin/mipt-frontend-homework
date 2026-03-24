@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { Chat, User, Settings, AuthCredentials, Message } from './types';
+import type { Chat, User, Settings, AuthCredentials } from './types';
 import { mockChats, mockUser, mockSettings } from './data/mockData';
 import { AppLayout } from './components/layout/AppLayout';
 import { Sidebar } from './components/sidebar/Sidebar';
@@ -20,7 +20,6 @@ function App() {
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
 
   const activeChat = chats.find((chat) => chat.id === activeChatId) || null;
 
@@ -91,53 +90,17 @@ function App() {
   const handleSendMessage = useCallback((content: string) => {
     if (!activeChatId) return;
 
-    const userMessage: Message = {
-      id: `msg-${Date.now()}`,
-      role: 'user',
-      content,
-      timestamp: new Date(),
-    };
-
     setChats((prev) =>
       prev.map((chat) =>
-        chat.id === activeChatId
+        chat.id === activeChatId && chat.messages.length === 0
           ? {
               ...chat,
-              messages: [...chat.messages, userMessage],
+              title: content.slice(0, 50) + (content.length > 50 ? '...' : ''),
               updatedAt: new Date(),
-              title:
-                chat.messages.length === 0
-                  ? content.slice(0, 50) + (content.length > 50 ? '...' : '')
-                  : chat.title,
             }
           : chat
       )
     );
-
-    setIsTyping(true);
-
-    setTimeout(() => {
-      const assistantMessage: Message = {
-        id: `msg-${Date.now() + 1}`,
-        role: 'assistant',
-        content: `Это демонстрационный ответ на ваше сообщение:\n\n> ${content}\n\nВ реальном приложении здесь будет ответ от GigaChat API.`,
-        timestamp: new Date(),
-      };
-
-      setChats((prev) =>
-        prev.map((chat) =>
-          chat.id === activeChatId
-            ? {
-                ...chat,
-                messages: [...chat.messages, assistantMessage],
-                updatedAt: new Date(),
-              }
-            : chat
-        )
-      );
-
-      setIsTyping(false);
-    }, 1500);
   }, [activeChatId]);
 
   const handleSaveSettings = useCallback((newSettings: Settings) => {
@@ -175,7 +138,6 @@ function App() {
       >
         <ChatWindow
           chat={activeChat}
-          isTyping={isTyping}
           onSendMessage={handleSendMessage}
           onOpenSidebar={() => setIsSidebarOpen(true)}
           onNewChat={handleNewChat}
