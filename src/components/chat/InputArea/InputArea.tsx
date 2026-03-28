@@ -3,12 +3,16 @@ import styles from './InputArea.module.css';
 
 interface InputAreaProps {
   onSend: (message: string) => void;
+  onStop?: () => void;
+  isLoading?: boolean;
   disabled?: boolean;
   placeholder?: string;
 }
 
 export function InputArea({
   onSend,
+  onStop,
+  isLoading = false,
   disabled = false,
   placeholder = 'Введите сообщение...',
 }: InputAreaProps) {
@@ -38,7 +42,7 @@ export function InputArea({
     }
   };
 
-  const canSend = value.trim().length > 0 && !disabled;
+  const canSend = value.trim().length > 0 && !disabled && !isLoading;
 
   return (
     <div className={styles.wrapper}>
@@ -51,28 +55,46 @@ export function InputArea({
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
-            disabled={disabled}
+            disabled={disabled || isLoading}
             rows={1}
           />
         </div>
-        <button
-          type="submit"
-          className={styles.sendButton}
-          disabled={!canSend}
-          aria-label="Отправить"
-        >
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
+        {isLoading ? (
+          <button
+            type="button"
+            className={styles.stopButton}
+            onClick={onStop}
+            aria-label="Остановить генерацию"
           >
-            <line x1="22" y1="2" x2="11" y2="13" />
-            <polygon points="22 2 15 22 11 13 2 9 22 2" />
-          </svg>
-        </button>
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            >
+              <rect x="4" y="4" width="16" height="16" rx="2" />
+            </svg>
+          </button>
+        ) : (
+          <button
+            type="submit"
+            className={styles.sendButton}
+            disabled={!canSend}
+            aria-label="Отправить"
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <line x1="22" y1="2" x2="11" y2="13" />
+              <polygon points="22 2 15 22 11 13 2 9 22 2" />
+            </svg>
+          </button>
+        )}
       </form>
       <div className={styles.hint}>
         Shift + Enter для новой строки

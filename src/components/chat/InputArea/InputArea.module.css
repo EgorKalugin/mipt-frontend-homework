@@ -68,6 +68,23 @@
   cursor: not-allowed;
 }
 
+.stopButton {
+  flex-shrink: 0;
+  width: 48px;
+  height: var(--input-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-error);
+  color: white;
+  border-radius: var(--border-radius-lg);
+  transition: background-color var(--transition-fast);
+}
+
+.stopButton:hover {
+  background-color: #b71c1c;
+}
+
 .hint {
   margin-top: 8px;
   font-size: 12px;

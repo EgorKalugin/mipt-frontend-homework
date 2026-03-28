@@ -107,6 +107,13 @@ function App() {
     setSettings(newSettings);
   }, []);
 
+  const handleToggleTheme = useCallback(() => {
+    setSettings((prev) => ({
+      ...prev,
+      theme: prev.theme === 'light' ? 'dark' : 'light',
+    }));
+  }, []);
+
   if (!isAuthenticated) {
     return (
       <AuthForm
@@ -141,6 +148,8 @@ function App() {
           onSendMessage={handleSendMessage}
           onOpenSidebar={() => setIsSidebarOpen(true)}
           onNewChat={handleNewChat}
+          theme={settings.theme}
+          onToggleTheme={handleToggleTheme}
         />
       </AppLayout>
 
