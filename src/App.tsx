@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
-import type { Chat, User, Settings, AuthCredentials } from './types';
-import { mockChats, mockUser, mockSettings } from './data/mockData';
+import { useEffect, useCallback } from 'react';
+import type { Chat, AuthCredentials } from './types';
+import { mockChats, mockUser } from './data/mockData';
+import { useAppState } from './hooks/useAppState';
 import { AppLayout } from './components/layout/AppLayout';
 import { Sidebar } from './components/sidebar/Sidebar';
 import { ChatWindow } from './components/chat/ChatWindow';
@@ -9,17 +10,32 @@ import { AuthForm } from './components/auth/AuthForm';
 import './styles/variables.css';
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [authLoading, setAuthLoading] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null);
-
-  const [user, setUser] = useState<User | null>(null);
-  const [chats, setChats] = useState<Chat[]>([]);
-  const [activeChatId, setActiveChatId] = useState<string | null>(null);
-  const [settings, setSettings] = useState<Settings>(mockSettings);
-
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const {
+    state: {
+      isAuthenticated,
+      authLoading,
+      authError,
+      user,
+      chats,
+      activeChatId,
+      settings,
+      isSidebarOpen,
+      isSettingsOpen,
+    },
+    setAuthState,
+    setAuthLoading,
+    setAuthError,
+    initializeAuthData,
+    createChat,
+    deleteChat,
+    renameChat,
+    setActiveChat,
+    updateSettings,
+    toggleTheme,
+    setSidebarOpen,
+    setSettingsPanelOpen,
+    logout,
+  } = useAppState();
 
   const activeChat = chats.find((chat) => chat.id === activeChatId) || null;
 
@@ -33,23 +49,18 @@ function App() {
 
     setTimeout(() => {
       if (credentials.clientId && credentials.clientSecret) {
-        setUser(mockUser);
-        setChats(mockChats);
-        setActiveChatId(mockChats[0]?.id || null);
-        setIsAuthenticated(true);
+        initializeAuthData(mockUser, mockChats);
+        setAuthState(true);
       } else {
         setAuthError('Неверные учётные данные');
       }
       setAuthLoading(false);
     }, 1000);
-  }, []);
+  }, [setAuthLoading, setAuthError, setAuthState, initializeAuthData]);
 
   const handleLogout = useCallback(() => {
-    setIsAuthenticated(false);
-    setUser(null);
-    setChats([]);
-    setActiveChatId(null);
-  }, []);
+    logout();
+  }, [logout]);
 
   const handleNewChat = useCallback(() => {
     const newChat: Chat = {
@@ -59,60 +70,43 @@ function App() {
       createdAt: new Date(),
       updatedAt: new Date(),
     };
-    setChats((prev) => [newChat, ...prev]);
-    setActiveChatId(newChat.id);
-    setIsSidebarOpen(false);
-  }, []);
+    createChat(newChat);
+    setSidebarOpen(false);
+  }, [createChat, setSidebarOpen]);
 
   const handleDeleteChat = useCallback((chatId: string) => {
-    setChats((prev) => prev.filter((chat) => chat.id !== chatId));
-    setActiveChatId((currentId) => (currentId === chatId ? null : currentId));
-  }, []);
+    deleteChat(chatId);
+  }, [deleteChat]);
 
   const handleRenameChat = useCallback((chatId: string) => {
     const newTitle = prompt('Введите новое название чата:');
     if (newTitle?.trim()) {
-      setChats((prev) =>
-        prev.map((chat) =>
-          chat.id === chatId
-            ? { ...chat, title: newTitle.trim(), updatedAt: new Date() }
-            : chat
-        )
-      );
+      renameChat(chatId, newTitle.trim());
     }
-  }, []);
+  }, [renameChat]);
 
   const handleSelectChat = useCallback((chatId: string) => {
-    setActiveChatId(chatId);
-    setIsSidebarOpen(false);
-  }, []);
+    setActiveChat(chatId);
+    setSidebarOpen(false);
+  }, [setActiveChat, setSidebarOpen]);
 
   const handleSendMessage = useCallback((content: string) => {
     if (!activeChatId) return;
 
-    setChats((prev) =>
-      prev.map((chat) =>
-        chat.id === activeChatId && chat.messages.length === 0
-          ? {
-              ...chat,
-              title: content.slice(0, 50) + (content.length > 50 ? '...' : ''),
-              updatedAt: new Date(),
-            }
-          : chat
-      )
-    );
-  }, [activeChatId]);
+    // Update chat title if it's the first message
+    const chat = chats.find((c) => c.id === activeChatId);
+    if (chat && chat.messages.length === 0) {
+      renameChat(activeChatId, content.slice(0, 50) + (content.length > 50 ? '...' : ''));
+    }
+  }, [activeChatId, chats, renameChat]);
 
-  const handleSaveSettings = useCallback((newSettings: Settings) => {
-    setSettings(newSettings);
-  }, []);
+  const handleSaveSettings = useCallback((newSettings: any) => {
+    updateSettings(newSettings);
+  }, [updateSettings]);
 
   const handleToggleTheme = useCallback(() => {
-    setSettings((prev) => ({
-      ...prev,
-      theme: prev.theme === 'light' ? 'dark' : 'light',
-    }));
-  }, []);
+    toggleTheme();
+  }, [toggleTheme]);
 
   if (!isAuthenticated) {
     return (
@@ -136,17 +130,17 @@ function App() {
             onNewChat={handleNewChat}
             onDeleteChat={handleDeleteChat}
             onRenameChat={handleRenameChat}
-            onOpenSettings={() => setIsSettingsOpen(true)}
+            onOpenSettings={() => setSettingsPanelOpen(true)}
             onLogout={handleLogout}
           />
         }
         isSidebarOpen={isSidebarOpen}
-        onCloseSidebar={() => setIsSidebarOpen(false)}
+        onCloseSidebar={() => setSidebarOpen(false)}
       >
         <ChatWindow
           chat={activeChat}
           onSendMessage={handleSendMessage}
-          onOpenSidebar={() => setIsSidebarOpen(true)}
+          onOpenSidebar={() => setSidebarOpen(true)}
           onNewChat={handleNewChat}
           theme={settings.theme}
           onToggleTheme={handleToggleTheme}
@@ -157,7 +151,7 @@ function App() {
         <SettingsPanel
           settings={settings}
           onSave={handleSaveSettings}
-          onClose={() => setIsSettingsOpen(false)}
+          onClose={() => setSettingsPanelOpen(false)}
         />
       )}
     </>
