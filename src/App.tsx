@@ -1,5 +1,6 @@
 import { useEffect, useCallback } from 'react';
-import type { Chat, AuthCredentials } from './types';
+import { Routes, Route, useNavigate, useParams } from 'react-router-dom';
+import type { Chat } from './types';
 import { mockChats, mockUser } from './data/mockData';
 import { useAppState } from './hooks/useAppState';
 import { AppLayout } from './components/layout/AppLayout';
@@ -9,58 +10,43 @@ import { SettingsPanel } from './components/settings/SettingsPanel';
 import { AuthForm } from './components/auth/AuthForm';
 import './styles/variables.css';
 
-function App() {
+// Chat page component
+function ChatPage() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const {
-    state: {
-      isAuthenticated,
-      authLoading,
-      authError,
-      user,
-      chats,
-      activeChatId,
-      settings,
-      isSidebarOpen,
-      isSettingsOpen,
-    },
-    setAuthState,
-    setAuthLoading,
-    setAuthError,
-    initializeAuthData,
-    createChat,
-    deleteChat,
-    renameChat,
+    state: { chats, activeChatId, settings, isSidebarOpen, isSettingsOpen, authKey },
     setActiveChat,
+    renameChat,
     updateSettings,
     toggleTheme,
     setSidebarOpen,
     setSettingsPanelOpen,
-    logout,
+    addMessage,
+    deleteChat,
   } = useAppState();
 
-  const activeChat = chats.find((chat) => chat.id === activeChatId) || null;
+  const chat = id ? chats.find((c) => c.id === id) : chats.find((c) => c.id === activeChatId);
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', settings.theme);
-  }, [settings.theme]);
+    if (id && id !== activeChatId) {
+      setActiveChat(id);
+    }
+  }, [id, activeChatId, setActiveChat]);
 
-  const handleAuth = useCallback((credentials: AuthCredentials) => {
-    setAuthLoading(true);
-    setAuthError(null);
+  const handleSendMessage = useCallback((content: string) => {
+    if (!chat) return;
+    // Auto-name chat from first user message
+    if (chat.title === 'Новый чат' && chat.messages.length === 1) {
+      const newTitle = content.slice(0, 50) + (content.length > 50 ? '...' : '');
+      renameChat(chat.id, newTitle);
+    }
+  }, [chat, renameChat]);
 
-    setTimeout(() => {
-      if (credentials.clientId && credentials.clientSecret) {
-        initializeAuthData(mockUser, mockChats);
-        setAuthState(true);
-      } else {
-        setAuthError('Неверные учётные данные');
-      }
-      setAuthLoading(false);
-    }, 1000);
-  }, [setAuthLoading, setAuthError, setAuthState, initializeAuthData]);
-
-  const handleLogout = useCallback(() => {
-    logout();
-  }, [logout]);
+  const handleSelectChat = useCallback((chatId: string) => {
+    navigate(`/chat/${chatId}`);
+    setSidebarOpen(false);
+  }, [navigate, setSidebarOpen]);
 
   const handleNewChat = useCallback(() => {
     const newChat: Chat = {
@@ -70,35 +56,10 @@ function App() {
       createdAt: new Date(),
       updatedAt: new Date(),
     };
-    createChat(newChat);
+    setActiveChat(newChat.id);
+    navigate(`/chat/${newChat.id}`);
     setSidebarOpen(false);
-  }, [createChat, setSidebarOpen]);
-
-  const handleDeleteChat = useCallback((chatId: string) => {
-    deleteChat(chatId);
-  }, [deleteChat]);
-
-  const handleRenameChat = useCallback((chatId: string) => {
-    const newTitle = prompt('Введите новое название чата:');
-    if (newTitle?.trim()) {
-      renameChat(chatId, newTitle.trim());
-    }
-  }, [renameChat]);
-
-  const handleSelectChat = useCallback((chatId: string) => {
-    setActiveChat(chatId);
-    setSidebarOpen(false);
-  }, [setActiveChat, setSidebarOpen]);
-
-  const handleSendMessage = useCallback((content: string) => {
-    if (!activeChatId) return;
-
-    // Update chat title if it's the first message
-    const chat = chats.find((c) => c.id === activeChatId);
-    if (chat && chat.messages.length === 0) {
-      renameChat(activeChatId, content.slice(0, 50) + (content.length > 50 ? '...' : ''));
-    }
-  }, [activeChatId, chats, renameChat]);
+  }, [setActiveChat, navigate, setSidebarOpen]);
 
   const handleSaveSettings = useCallback((newSettings: any) => {
     updateSettings(newSettings);
@@ -107,6 +68,89 @@ function App() {
   const handleToggleTheme = useCallback(() => {
     toggleTheme();
   }, [toggleTheme]);
+
+  return (
+    <AppLayout
+      sidebar={
+        <Sidebar
+          chats={chats}
+          activeChatId={id || activeChatId}
+          user={null}
+          onSelectChat={handleSelectChat}
+          onNewChat={handleNewChat}
+          onDeleteChat={deleteChat}
+          onRenameChat={(chatId: string) => {
+            const newTitle = prompt('Введите новое название чата:');
+            if (newTitle?.trim()) {
+              renameChat(chatId, newTitle.trim());
+            }
+          }}
+          onOpenSettings={() => setSettingsPanelOpen(true)}
+          onLogout={() => {}}
+        />
+      }
+      isSidebarOpen={isSidebarOpen}
+      onCloseSidebar={() => setSidebarOpen(false)}
+    >
+      <ChatWindow
+        chat={chat || null}
+        onSendMessage={handleSendMessage}
+        onOpenSidebar={() => setSidebarOpen(true)}
+        onNewChat={handleNewChat}
+        theme={settings.theme}
+        onToggleTheme={handleToggleTheme}
+        onAddMessage={addMessage}
+        settings={settings}
+        authKey={authKey || undefined}
+      />
+      {isSettingsOpen && (
+        <SettingsPanel
+          settings={settings}
+          onSave={handleSaveSettings}
+          onClose={() => setSettingsPanelOpen(false)}
+        />
+      )}
+    </AppLayout>
+  );
+}
+
+// Main App component
+function App() {
+  const {
+    state: {
+      isAuthenticated,
+      authLoading,
+      authError,
+      settings,
+    },
+    setAuthState,
+    setAuthLoading,
+    setAuthError,
+    initializeAuthData,
+  } = useAppState();
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', settings.theme);
+  }, [settings.theme]);
+
+  const handleAuth = useCallback((credentials: any) => {
+    setAuthLoading(true);
+    setAuthError(null);
+
+    setTimeout(() => {
+      if (credentials.clientId && credentials.clientSecret) {
+        // Create auth key (base64 encoded clientId:clientSecret for GigaChat API)
+        const authString = `${credentials.clientId}:${credentials.clientSecret}`;
+        const authKey = btoa(authString);
+
+        initializeAuthData(mockUser, mockChats, authKey);
+        setAuthState(true);
+      } else {
+        setAuthError('Неверные учётные данные');
+      }
+      setAuthLoading(false);
+    }, 1000);
+  }, [setAuthLoading, setAuthError, setAuthState, initializeAuthData]);
 
   if (!isAuthenticated) {
     return (
@@ -119,42 +163,10 @@ function App() {
   }
 
   return (
-    <>
-      <AppLayout
-        sidebar={
-          <Sidebar
-            chats={chats}
-            activeChatId={activeChatId}
-            user={user}
-            onSelectChat={handleSelectChat}
-            onNewChat={handleNewChat}
-            onDeleteChat={handleDeleteChat}
-            onRenameChat={handleRenameChat}
-            onOpenSettings={() => setSettingsPanelOpen(true)}
-            onLogout={handleLogout}
-          />
-        }
-        isSidebarOpen={isSidebarOpen}
-        onCloseSidebar={() => setSidebarOpen(false)}
-      >
-        <ChatWindow
-          chat={activeChat}
-          onSendMessage={handleSendMessage}
-          onOpenSidebar={() => setSidebarOpen(true)}
-          onNewChat={handleNewChat}
-          theme={settings.theme}
-          onToggleTheme={handleToggleTheme}
-        />
-      </AppLayout>
-
-      {isSettingsOpen && (
-        <SettingsPanel
-          settings={settings}
-          onSave={handleSaveSettings}
-          onClose={() => setSettingsPanelOpen(false)}
-        />
-      )}
-    </>
+    <Routes>
+      <Route path="/chat/:id" element={<ChatPage />} />
+      <Route path="/" element={<ChatPage />} />
+    </Routes>
   );
 }
 

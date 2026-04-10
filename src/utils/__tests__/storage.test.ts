@@ -7,6 +7,7 @@ const createMockAppState = (): AppState => ({
   isAuthenticated: true,
   authLoading: false,
   authError: null,
+  authKey: null,
   user: {
     id: 'user-1',
     email: 'test@example.com',
@@ -280,6 +281,7 @@ describe('localStorage persistence', () => {
         isAuthenticated: false,
         authLoading: false,
         authError: null,
+        authKey: null,
         user: null,
         chats: [],
         activeChatId: null,

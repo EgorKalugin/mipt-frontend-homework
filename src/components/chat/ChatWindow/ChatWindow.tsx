@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { Message, Chat } from '../../../types';
+import type { Message, Chat, Settings } from '../../../types';
+import { GigaChatService } from '../../../services/gigachat';
 import { MessageList } from '../MessageList';
 import { InputArea } from '../InputArea';
 import { EmptyState } from '../../common/EmptyState';
@@ -12,6 +13,9 @@ interface ChatWindowProps {
   onNewChat: () => void;
   theme?: 'light' | 'dark';
   onToggleTheme?: () => void;
+  onAddMessage?: (chatId: string, message: Message) => void;
+  settings?: Settings;
+  authKey?: string;
 }
 
 export function ChatWindow({
@@ -21,13 +25,14 @@ export function ChatWindow({
   onNewChat,
   theme,
   onToggleTheme,
+  onAddMessage,
+  settings,
+  authKey,
 }: ChatWindowProps) {
-  const [messages, setMessages] = useState<Message[]>(chat?.messages ?? []);
   const [isLoading, setIsLoading] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    setMessages(chat?.messages ?? []);
     setIsLoading(false);
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
   }, [chat?.id]);
@@ -42,6 +47,8 @@ export function ChatWindow({
 
   const handleSend = useCallback(
     (content: string) => {
+      if (!chat || !onAddMessage || !settings) return;
+
       const userMessage: Message = {
         id: `msg-${Date.now()}`,
         role: 'user',
@@ -49,24 +56,61 @@ export function ChatWindow({
         timestamp: new Date(),
       };
 
-      setMessages((prev) => [...prev, userMessage]);
+      onAddMessage(chat.id, userMessage);
       setIsLoading(true);
       onSendMessage(content);
 
-      timeoutRef.current = setTimeout(() => {
+      // Try to use real API if authKey is available, otherwise use mock response
+      if (authKey) {
+        // Use real API
+        (async () => {
+          try {
+            const allMessages = [...chat.messages, userMessage];
+            const response = await GigaChatService.sendMessage(
+              allMessages,
+              settings,
+              authKey,
+            );
+
+            const assistantMessage: Message = {
+              id: `msg-${Date.now() + 1}`,
+              role: 'assistant',
+              content: response,
+              timestamp: new Date(),
+            };
+
+            onAddMessage(chat.id, assistantMessage);
+            setIsLoading(false);
+          } catch (error) {
+            console.error('API error:', error);
+            // Fallback to mock response
+            const errorMessage: Message = {
+              id: `msg-${Date.now() + 1}`,
+              role: 'assistant',
+              content: `Ошибка API: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}. Используйте корректный API ключ.`,
+              timestamp: new Date(),
+            };
+            onAddMessage(chat.id, errorMessage);
+            setIsLoading(false);
+          }
+        })();
+      } else {
+        // Use mock response
         const assistantMessage: Message = {
           id: `msg-${Date.now() + 1}`,
           role: 'assistant',
-          content: `Это демонстрационный ответ на ваше сообщение:\n\n> ${content}\n\nВ реальном приложении здесь будет ответ от GigaChat API.`,
+          content: 'Это демонстрационный ответ на ваше сообщение:\n\n> ' + content + '\n\nВ реальном приложении здесь будет ответ от GigaChat API.',
           timestamp: new Date(),
         };
 
-        setMessages((prev) => [...prev, assistantMessage]);
-        setIsLoading(false);
-        timeoutRef.current = null;
-      }, 1500);
+        timeoutRef.current = setTimeout(() => {
+          onAddMessage(chat.id, assistantMessage);
+          setIsLoading(false);
+          timeoutRef.current = null;
+        }, 1500);
+      }
     },
-    [onSendMessage],
+    [chat, onAddMessage, onSendMessage, settings, authKey],
   );
 
   const menuIcon = (
@@ -159,8 +203,8 @@ export function ChatWindow({
         </div>
       </div>
       <div className={styles.content}>
-        {messages.length > 0 ? (
-          <MessageList messages={messages} isTyping={isLoading} />
+        {chat.messages.length > 0 ? (
+          <MessageList messages={chat.messages} isTyping={isLoading} />
         ) : (
           <EmptyState
             title="Чат пуст"

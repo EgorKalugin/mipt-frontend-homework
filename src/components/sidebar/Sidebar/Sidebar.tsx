@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import type { Chat, User } from '../../../types';
 import { SearchInput } from '../SearchInput';
 import { ChatList } from '../ChatList';
+import { ConfirmDialog } from '../../common/ConfirmDialog';
 import styles from './Sidebar.module.css';
 
 interface SidebarProps {
@@ -28,11 +29,28 @@ export function Sidebar({
   onLogout,
 }: SidebarProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [deleteConfirm, setDeleteConfirm] = useState<{ chatId: string; chatTitle: string } | null>(
+    null,
+  );
 
   const filteredChats = useMemo(() => {
     if (!searchQuery.trim()) return chats;
     const query = searchQuery.toLowerCase();
-    return chats.filter((chat) => chat.title.toLowerCase().includes(query));
+    return chats.filter((chat) => {
+      // Search by chat title
+      if (chat.title.toLowerCase().includes(query)) {
+        return true;
+      }
+      // Search by last message content
+      if (chat.messages.length > 0) {
+        const lastMessage = chat.messages[chat.messages.length - 1];
+        if (lastMessage.content.toLowerCase().includes(query)) {
+          return true;
+        }
+      }
+      // Search by any message content
+      return chat.messages.some((msg) => msg.content.toLowerCase().includes(query));
+    });
   }, [chats, searchQuery]);
 
   const getInitials = (name: string): string => {
@@ -42,6 +60,20 @@ export function Sidebar({
       .join('')
       .toUpperCase()
       .slice(0, 2);
+  };
+
+  const handleDeleteClick = (chatId: string) => {
+    const chat = chats.find((c) => c.id === chatId);
+    if (chat) {
+      setDeleteConfirm({ chatId, chatTitle: chat.title });
+    }
+  };
+
+  const handleConfirmDelete = () => {
+    if (deleteConfirm) {
+      onDeleteChat(deleteConfirm.chatId);
+      setDeleteConfirm(null);
+    }
   };
 
   return (
@@ -105,7 +137,7 @@ export function Sidebar({
         chats={filteredChats}
         activeChatId={activeChatId}
         onSelectChat={onSelectChat}
-        onDeleteChat={onDeleteChat}
+        onDeleteChat={handleDeleteClick}
         onRenameChat={onRenameChat}
       />
 
@@ -119,6 +151,18 @@ export function Sidebar({
             </div>
           </div>
         </div>
+      )}
+
+      {deleteConfirm && (
+        <ConfirmDialog
+          title="Удалить чат"
+          message={`Вы уверены, что хотите удалить чат "${deleteConfirm.chatTitle}"? Это действие невозможно отменить.`}
+          confirmLabel="Удалить"
+          cancelLabel="Отмена"
+          isDangerous={true}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setDeleteConfirm(null)}
+        />
       )}
     </div>
   );

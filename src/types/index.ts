@@ -37,3 +37,9 @@ export interface AuthCredentials {
   clientSecret: string;
   scope: Scope;
 }
+
+export interface AuthKey {
+  clientId: string;
+  clientSecret: string;
+  base64Encoded: string;
+}
