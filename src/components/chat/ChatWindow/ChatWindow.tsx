@@ -4,6 +4,7 @@ import { GigaChatService } from '../../../services/gigachat';
 import { MessageList } from '../MessageList';
 import { InputArea } from '../InputArea';
 import { EmptyState } from '../../common/EmptyState';
+import { ErrorBoundary } from '../../common/ErrorBoundary';
 import styles from './ChatWindow.module.css';
 
 interface ChatWindowProps {
@@ -204,7 +205,9 @@ export function ChatWindow({
       </div>
       <div className={styles.content}>
         {chat.messages.length > 0 ? (
-          <MessageList messages={chat.messages} isTyping={isLoading} />
+          <ErrorBoundary>
+            <MessageList messages={chat.messages} isTyping={isLoading} />
+          </ErrorBoundary>
         ) : (
           <EmptyState
             title="Чат пуст"

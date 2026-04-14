@@ -1,14 +1,20 @@
-import { useEffect, useCallback } from 'react';
+import { lazy, Suspense, useEffect, useCallback } from 'react';
 import { Routes, Route, useNavigate, useParams } from 'react-router-dom';
 import type { Chat } from './types';
 import { mockChats, mockUser } from './data/mockData';
 import { useAppState } from './hooks/useAppState';
 import { AppLayout } from './components/layout/AppLayout';
-import { Sidebar } from './components/sidebar/Sidebar';
 import { ChatWindow } from './components/chat/ChatWindow';
-import { SettingsPanel } from './components/settings/SettingsPanel';
 import { AuthForm } from './components/auth/AuthForm';
 import './styles/variables.css';
+
+const Sidebar = lazy(() =>
+  import('./components/sidebar/Sidebar').then((m) => ({ default: m.Sidebar })),
+);
+
+const SettingsPanel = lazy(() =>
+  import('./components/settings/SettingsPanel').then((m) => ({ default: m.SettingsPanel })),
+);
 
 // Chat page component
 function ChatPage() {
@@ -69,25 +75,33 @@ function ChatPage() {
     toggleTheme();
   }, [toggleTheme]);
 
+  const handleDeleteChat = useCallback((chatId: string) => {
+    deleteChat(chatId);
+  }, [deleteChat]);
+
+  const handleRenameChat = useCallback((chatId: string) => {
+    const newTitle = prompt('Введите новое название чата:');
+    if (newTitle?.trim()) {
+      renameChat(chatId, newTitle.trim());
+    }
+  }, [renameChat]);
+
   return (
     <AppLayout
       sidebar={
-        <Sidebar
-          chats={chats}
-          activeChatId={id || activeChatId}
-          user={null}
-          onSelectChat={handleSelectChat}
-          onNewChat={handleNewChat}
-          onDeleteChat={deleteChat}
-          onRenameChat={(chatId: string) => {
-            const newTitle = prompt('Введите новое название чата:');
-            if (newTitle?.trim()) {
-              renameChat(chatId, newTitle.trim());
-            }
-          }}
-          onOpenSettings={() => setSettingsPanelOpen(true)}
-          onLogout={() => {}}
-        />
+        <Suspense fallback={<div style={{ width: '100%', height: '100%' }} />}>
+          <Sidebar
+            chats={chats}
+            activeChatId={id || activeChatId}
+            user={null}
+            onSelectChat={handleSelectChat}
+            onNewChat={handleNewChat}
+            onDeleteChat={handleDeleteChat}
+            onRenameChat={handleRenameChat}
+            onOpenSettings={() => setSettingsPanelOpen(true)}
+            onLogout={() => {}}
+          />
+        </Suspense>
       }
       isSidebarOpen={isSidebarOpen}
       onCloseSidebar={() => setSidebarOpen(false)}
@@ -104,11 +118,13 @@ function ChatPage() {
         authKey={authKey || undefined}
       />
       {isSettingsOpen && (
-        <SettingsPanel
-          settings={settings}
-          onSave={handleSaveSettings}
-          onClose={() => setSettingsPanelOpen(false)}
-        />
+        <Suspense fallback={null}>
+          <SettingsPanel
+            settings={settings}
+            onSave={handleSaveSettings}
+            onClose={() => setSettingsPanelOpen(false)}
+          />
+        </Suspense>
       )}
     </AppLayout>
   );

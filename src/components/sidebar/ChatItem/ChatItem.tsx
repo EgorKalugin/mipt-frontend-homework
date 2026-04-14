@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import type { Chat } from '../../../types';
 import styles from './ChatItem.module.css';
 
@@ -28,7 +29,7 @@ function formatDate(date: Date): string {
   }
 }
 
-export function ChatItem({
+export const ChatItem = memo(function ChatItem({
   chat,
   isActive,
   onClick,
@@ -97,4 +98,4 @@ export function ChatItem({
       </div>
     </div>
   );
-}
+});

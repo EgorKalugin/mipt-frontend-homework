@@ -1,0 +1,30 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  gap: 1rem;
+  height: 100%;
+  color: var(--color-text-secondary);
+}
+
+.message {
+  text-align: center;
+  font-size: 0.875rem;
+}
+
+.retryButton {
+  padding: 0.5rem 1.25rem;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-secondary);
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: background 0.15s;
+}
+
+.retryButton:hover {
+  background: var(--color-bg-hover);
+}
