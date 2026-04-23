@@ -1,9 +1,17 @@
 export type MessageRole = 'user' | 'assistant';
 
+export interface MessageAttachment {
+  type: 'image';
+  data: string; // base64 data URL (e.g. "data:image/jpeg;base64,...")
+  mimeType: string;
+  name?: string;
+}
+
 export interface Message {
   id: string;
   role: MessageRole;
   content: string;
+  attachments?: MessageAttachment[];
   timestamp: Date;
 }
 

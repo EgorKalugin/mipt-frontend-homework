@@ -11,6 +11,10 @@ describe('InputArea Component', () => {
     vi.clearAllMocks()
   })
 
+  // Helpers
+  const getSendButton = () => screen.getByRole('button', { name: 'Отправить' })
+  const getStopButton = () => screen.getByRole('button', { name: 'Остановить генерацию' })
+
   describe('rendering', () => {
     it('should render without crashing', () => {
       render(
@@ -51,9 +55,21 @@ describe('InputArea Component', () => {
         />
       )
 
-      // The button might have SVG or text content
-      const button = screen.getByRole('button')
-      expect(button).toBeInTheDocument()
+      expect(getSendButton()).toBeInTheDocument()
+    })
+
+    it('should render attach image button', () => {
+      render(
+        <InputArea
+          onSend={mockOnSend}
+          onStop={mockOnStop}
+          isLoading={false}
+          disabled={false}
+          placeholder="Type..."
+        />
+      )
+
+      expect(screen.getByRole('button', { name: 'Прикрепить изображение' })).toBeInTheDocument()
     })
   })
 
@@ -101,8 +117,7 @@ describe('InputArea Component', () => {
         />
       )
 
-      const button = screen.getByRole('button')
-      expect(button).toBeDisabled()
+      expect(getSendButton()).toBeDisabled()
     })
 
     it('should not enable send button for whitespace-only input', async () => {
@@ -120,8 +135,7 @@ describe('InputArea Component', () => {
       const input = screen.getByPlaceholderText('Type...')
       await user.type(input, '   ')
 
-      const button = screen.getByRole('button')
-      expect(button).toBeDisabled()
+      expect(getSendButton()).toBeDisabled()
     })
 
     it('should enable send button when text is entered', async () => {
@@ -139,8 +153,7 @@ describe('InputArea Component', () => {
       const input = screen.getByPlaceholderText('Type...')
       await user.type(input, 'Hello')
 
-      const button = screen.getByRole('button')
-      expect(button).not.toBeDisabled()
+      expect(getSendButton()).not.toBeDisabled()
     })
 
     it('should keep send button enabled until text is cleared', async () => {
@@ -159,8 +172,7 @@ describe('InputArea Component', () => {
       await user.type(input, 'Hello')
       await user.clear(input)
 
-      const button = screen.getByRole('button')
-      expect(button).toBeDisabled()
+      expect(getSendButton()).toBeDisabled()
     })
   })
 
@@ -180,10 +192,9 @@ describe('InputArea Component', () => {
       const input = screen.getByPlaceholderText('Type...')
       await user.type(input, 'Test message')
 
-      const button = screen.getByRole('button')
-      await user.click(button)
+      await user.click(getSendButton())
 
-      expect(mockOnSend).toHaveBeenCalledWith('Test message')
+      expect(mockOnSend).toHaveBeenCalledWith('Test message', undefined)
       expect(mockOnSend).toHaveBeenCalledTimes(1)
     })
 
@@ -203,8 +214,7 @@ describe('InputArea Component', () => {
       await user.type(input, 'Test message')
       expect(input.value).toBe('Test message')
 
-      const button = screen.getByRole('button')
-      await user.click(button)
+      await user.click(getSendButton())
 
       await waitFor(() => {
         expect(input.value).toBe('')
@@ -224,7 +234,7 @@ describe('InputArea Component', () => {
       )
 
       const input = screen.getByPlaceholderText('Type...')
-      const button = screen.getByRole('button')
+      const button = getSendButton()
 
       // Type and send first message
       await user.type(input, 'First message')
@@ -259,7 +269,7 @@ describe('InputArea Component', () => {
       await user.type(input, 'Test')
       await user.keyboard('{Enter}')
 
-      expect(mockOnSend).toHaveBeenCalledWith('Test')
+      expect(mockOnSend).toHaveBeenCalledWith('Test', undefined)
     })
 
     it('should not send message on Shift+Enter', async () => {
@@ -334,12 +344,10 @@ describe('InputArea Component', () => {
         />
       )
 
-      // The stop button should be rendered (we can check for it by checking the button exists and has specific class or content)
-      const button = screen.getByRole('button')
-      expect(button).toBeInTheDocument()
+      expect(getStopButton()).toBeInTheDocument()
     })
 
-    it('should call onStop when loading is true and button is clicked', async () => {
+    it('should call onStop when loading is true and stop button is clicked', async () => {
       const user = userEvent.setup()
       render(
         <InputArea
@@ -351,8 +359,7 @@ describe('InputArea Component', () => {
         />
       )
 
-      const button = screen.getByRole('button')
-      await user.click(button)
+      await user.click(getStopButton())
 
       expect(mockOnStop).toHaveBeenCalled()
     })
@@ -372,8 +379,7 @@ describe('InputArea Component', () => {
       const input = screen.getByPlaceholderText('Type...')
       await user.type(input, 'Message')
 
-      const button = screen.getByRole('button')
-      await user.click(button)
+      await user.click(getSendButton())
 
       expect(mockOnSend).toHaveBeenCalled()
       expect(mockOnStop).not.toHaveBeenCalled()
@@ -420,10 +426,9 @@ describe('InputArea Component', () => {
       await user.keyboard('{Shift>}{Enter}{/Shift}')
       await user.type(input, 'Line 2')
 
-      const button = screen.getByRole('button')
-      await user.click(button)
+      await user.click(getSendButton())
 
-      expect(mockOnSend).toHaveBeenCalledWith('Line 1\nLine 2')
+      expect(mockOnSend).toHaveBeenCalledWith('Line 1\nLine 2', undefined)
     })
   })
 
@@ -441,7 +446,7 @@ describe('InputArea Component', () => {
       )
 
       const input = screen.getByPlaceholderText('Type...')
-      const button = screen.getByRole('button')
+      const button = getSendButton()
 
       // First message
       await user.type(input, 'Message 1')
@@ -452,8 +457,8 @@ describe('InputArea Component', () => {
       await user.click(button)
 
       expect(mockOnSend).toHaveBeenCalledTimes(2)
-      expect(mockOnSend).toHaveBeenNthCalledWith(1, 'Message 1')
-      expect(mockOnSend).toHaveBeenNthCalledWith(2, 'Message 2')
+      expect(mockOnSend).toHaveBeenNthCalledWith(1, 'Message 1', undefined)
+      expect(mockOnSend).toHaveBeenNthCalledWith(2, 'Message 2', undefined)
     })
 
     it('should trim message content when sending', async () => {
@@ -471,11 +476,8 @@ describe('InputArea Component', () => {
       const input = screen.getByPlaceholderText('Type...')
       await user.type(input, '  Message with spaces  ')
 
-      const button = screen.getByRole('button')
-      await user.click(button)
+      await user.click(getSendButton())
 
-      // Note: The actual trimming behavior depends on the component implementation
-      // This test documents the expected behavior
       expect(mockOnSend).toHaveBeenCalled()
     })
   })

@@ -23,12 +23,14 @@ function ChatPage() {
   const {
     state: { chats, activeChatId, settings, isSidebarOpen, isSettingsOpen, authKey },
     setActiveChat,
+    createChat,
     renameChat,
     updateSettings,
     toggleTheme,
     setSidebarOpen,
     setSettingsPanelOpen,
     addMessage,
+    updateMessage,
     deleteChat,
   } = useAppState();
 
@@ -42,8 +44,8 @@ function ChatPage() {
 
   const handleSendMessage = useCallback((content: string) => {
     if (!chat) return;
-    // Auto-name chat from first user message
-    if (chat.title === 'Новый чат' && chat.messages.length === 1) {
+    // Auto-name chat based on the first user message (chat is still empty at this point)
+    if (chat.title === 'Новый чат' && chat.messages.length === 0) {
       const newTitle = content.slice(0, 50) + (content.length > 50 ? '...' : '');
       renameChat(chat.id, newTitle);
     }
@@ -62,10 +64,10 @@ function ChatPage() {
       createdAt: new Date(),
       updatedAt: new Date(),
     };
-    setActiveChat(newChat.id);
+    createChat(newChat);
     navigate(`/chat/${newChat.id}`);
     setSidebarOpen(false);
-  }, [setActiveChat, navigate, setSidebarOpen]);
+  }, [createChat, navigate, setSidebarOpen]);
 
   const handleSaveSettings = useCallback((newSettings: any) => {
     updateSettings(newSettings);
@@ -114,6 +116,7 @@ function ChatPage() {
         theme={settings.theme}
         onToggleTheme={handleToggleTheme}
         onAddMessage={addMessage}
+        onUpdateMessage={updateMessage}
         settings={settings}
         authKey={authKey || undefined}
       />

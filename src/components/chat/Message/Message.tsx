@@ -60,6 +60,18 @@ export function Message({ message, variant }: MessageProps) {
         <div
           className={`${styles.bubble} ${isUser ? styles.userBubble : styles.assistantBubble}`}
         >
+          {message.attachments && message.attachments.length > 0 && (
+            <div className={styles.imageAttachments}>
+              {message.attachments.map((att, i) => (
+                <img
+                  key={i}
+                  src={att.data}
+                  alt={att.name ?? 'изображение'}
+                  className={styles.attachedImage}
+                />
+              ))}
+            </div>
+          )}
           <ReactMarkdown
             components={{
               code({ className, children, ...props }) {

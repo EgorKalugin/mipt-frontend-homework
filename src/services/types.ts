@@ -1,6 +1,12 @@
+export interface GigaChatContentPart {
+  type: 'text' | 'image_url';
+  text?: string;
+  image_url?: { url: string };
+}
+
 export interface GigaChatMessage {
   role: 'system' | 'user' | 'assistant';
-  content: string;
+  content: string | GigaChatContentPart[];
 }
 
 export interface GigaChatRequest {

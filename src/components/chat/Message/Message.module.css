@@ -170,3 +170,18 @@
 .copied {
   color: var(--color-success);
 }
+
+.imageAttachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.attachedImage {
+  max-width: 280px;
+  max-height: 200px;
+  border-radius: var(--border-radius);
+  object-fit: contain;
+  cursor: zoom-in;
+}

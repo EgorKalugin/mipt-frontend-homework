@@ -91,3 +91,71 @@
   color: var(--color-text-secondary);
   text-align: center;
 }
+
+.fileInput {
+  display: none;
+}
+
+.attachButton {
+  flex-shrink: 0;
+  width: 40px;
+  height: var(--input-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-secondary);
+  border-radius: var(--border-radius-lg);
+  transition: color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.attachButton:hover:not(:disabled) {
+  color: var(--color-primary);
+  background-color: var(--color-bg-hover);
+}
+
+.attachButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: 800px;
+  margin: 0 auto 10px;
+}
+
+.attachmentPreview {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  border-radius: var(--border-radius);
+  overflow: visible;
+  border: 1px solid var(--color-border);
+}
+
+.previewImg {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: var(--border-radius);
+  display: block;
+}
+
+.removeAttachment {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: var(--color-error);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 2px solid var(--color-bg);
+  z-index: 1;
+}
